@@ -17,7 +17,7 @@ This app compares **Euler**, **Symplectic Euler**, **Verlet / Leapfrog**, and
 Recommended systems for your project:
 - Simple Harmonic Oscillator
 - Pendulum
-- (Optional) Two-Body / Kepler Problem
+- Kepler Problem
 """
 )
 
@@ -50,6 +50,24 @@ steps = int(round(tfinal / h))
 t, q_hist, p_hist, e_hist = simulate(system, method, q0, p0, h, steps)
 energy_dev = e_hist - e_hist[0]
 
+# Shared plot style for clearer screenshots
+common_layout = dict(
+    plot_bgcolor="white",
+    paper_bgcolor="white",
+    font=dict(color="black", size=14),
+    title_font=dict(color="black", size=16),
+)
+
+common_xaxis = dict(
+    tickfont=dict(color="black", size=18),
+    title_font=dict(color="black", size=14),
+)
+
+common_yaxis = dict(
+    tickfont=dict(color="black", size=18),
+    title_font=dict(color="black", size=14),
+)
+
 if system_name in ("Simple Harmonic Oscillator", "Pendulum"):
     q_label, p_label = system.state_labels()
     col1, col2 = st.columns(2)
@@ -61,6 +79,10 @@ if system_name in ("Simple Harmonic Oscillator", "Pendulum"):
             title="Phase Portrait",
             xaxis_title=q_label,
             yaxis_title=p_label,
+            height=420,
+            **common_layout,
+            xaxis=common_xaxis,
+            yaxis=common_yaxis,
         )
         st.plotly_chart(fig_phase, use_container_width=True)
 
@@ -71,6 +93,10 @@ if system_name in ("Simple Harmonic Oscillator", "Pendulum"):
             title="Energy Deviation",
             xaxis_title="time",
             yaxis_title="E(t) - E(0)",
+            height=420,
+            **common_layout,
+            xaxis=common_xaxis,
+            yaxis=common_yaxis,
         )
         st.plotly_chart(fig_e, use_container_width=True)
 
@@ -79,13 +105,19 @@ else:
 
     with col1:
         fig_orbit = go.Figure()
-        fig_orbit.add_trace(go.Scatter(x=q_hist[:, 0], y=q_hist[:, 1], mode="lines", name=method))
+        fig_orbit.add_trace(
+            go.Scatter(x=q_hist[:, 0], y=q_hist[:, 1], mode="lines", name=method)
+        )
         fig_orbit.update_layout(
             title="Orbit",
             xaxis_title="x",
             yaxis_title="y",
             yaxis_scaleanchor="x",
             yaxis_scaleratio=1,
+            height=420,
+            **common_layout,
+            xaxis=common_xaxis,
+            yaxis={**common_yaxis, "scaleanchor": "x", "scaleratio": 1},
         )
         st.plotly_chart(fig_orbit, use_container_width=True)
 
@@ -96,6 +128,10 @@ else:
             title="Energy Deviation",
             xaxis_title="time",
             yaxis_title="E(t) - E(0)",
+            height=420,
+            **common_layout,
+            xaxis=common_xaxis,
+            yaxis=common_yaxis,
         )
         st.plotly_chart(fig_e, use_container_width=True)
 
@@ -105,21 +141,44 @@ st.write(
 )
 
 if st.button("Run order test"):
-    h_values = [0.2, 0.1, 0.05, 0.025]
+    # Use different step sizes for different systems
+    if system_name in ("Simple Harmonic Oscillator", "Pendulum"):
+        h_values = [0.2, 0.1, 0.05, 0.025]
+    else:  # Kepler Problem
+        h_values = [0.08, 0.04, 0.02, 0.01]
+
     h_vals, errs = estimate_order(system, method, q0, p0, min(10.0, tfinal), h_values)
 
     fig_order = go.Figure()
-    fig_order.add_trace(go.Scatter(x=h_vals, y=errs, mode="lines+markers", name="Error"))
+    fig_order.add_trace(
+        go.Scatter(x=h_vals, y=errs, mode="lines+markers", name="Error")
+    )
     fig_order.update_layout(
         title="Error vs Step Size",
         xaxis_title="h",
         yaxis_title="Final state error",
+        width=1100,
+        height=280,
+        margin=dict(l=50, r=30, t=50, b=50),
+        **common_layout,
+        xaxis={
+            **common_xaxis,
+            "nticks": 4,
+            "tickformat": ".3g",
+        },
+        yaxis={
+            **common_yaxis,
+            "nticks": 4,
+            "tickformat": ".3g",
+        },
     )
-    st.plotly_chart(fig_order, use_container_width=True)
+    order_col1, order_col2 = st.columns(2)
 
-    st.dataframe({"h": h_vals, "error": errs})
+    with order_col1:
+        st.plotly_chart(fig_order, use_container_width=False)
 
-st.info(
-    "Expected behaviour: Euler usually shows energy drift. Symplectic Euler and Verlet should "
-    "keep the energy error bounded on Hamiltonian systems."
-)
+    with order_col2:
+        st.dataframe({"h": h_vals, "error": errs})
+
+
+

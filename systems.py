@@ -50,7 +50,7 @@ class Pendulum(System):
 
 
 class Kepler2D(System):
-    name = "Two-Body / Kepler Problem"
+    name = "Kepler Problem"
 
     def __init__(self, mu=1.0):
         self.mu = mu
@@ -76,5 +76,5 @@ class Kepler2D(System):
 SYSTEMS = {
     "Simple Harmonic Oscillator": HarmonicOscillator,
     "Pendulum": Pendulum,
-    "Two-Body / Kepler Problem": Kepler2D,
+    "Kepler Problem": Kepler2D,
 }
